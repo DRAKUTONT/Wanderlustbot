@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D", "ANN", "ARG002", "A002", "RUF001", "I001"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/models.py" = ["N815"]
+"*/serializers.py" = ["N815"]
+"*/migrations/*.py" = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"

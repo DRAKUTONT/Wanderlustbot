@@ -5,11 +5,13 @@ from aiogram.fsm.context import FSMContext
 
 from models.models import User
 from bot.fsm.user_data import UserData
+from service.geosuggest import is_object_exists
 
 router = Router()
 
 
-# TODO: сделать проверки на валидность страны\города
+# TODO: адекватные приветствия
+
 
 @router.message(CommandStart())
 async def start(message: Message, state: FSMContext):
@@ -39,16 +41,24 @@ async def process_age(message: Message, state: FSMContext):
 
 @router.message(F.text, UserData.country)
 async def process_country(message: Message, state: FSMContext):
-    await state.update_data(country=message.text)
-    await state.set_state(UserData.city)
-    await message.answer("Введите ваш город")
+    if is_object_exists(message.text, types="country"):
+        await state.update_data(country=message.text)
+        await state.set_state(UserData.city)
+        await message.answer("Введите ваш город")
+    else:
+        await message.answer("Такой страны не существует:( Попробуйте еще раз")
 
 
 @router.message(F.text, UserData.city)
 async def process_city(message: Message, state: FSMContext):
-    await state.update_data(city=message.text)
-    await state.set_state(UserData.bio)
-    await message.answer("Расскажите о себе")
+    if is_object_exists(message.text, types="locality"):
+        await state.update_data(city=message.text)
+        await state.set_state(UserData.bio)
+        await message.answer("Расскажите о себе")
+    else:
+        await message.answer(
+            "Такого города не существует:( Попробуйте еще раз",
+        )
 
 
 @router.message(F.text, UserData.bio)

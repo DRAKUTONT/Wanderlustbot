@@ -1,11 +1,14 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from aiogram.filters.command import CommandStart
+from aiogram.filters.command import CommandStart, Command
 from aiogram.fsm.context import FSMContext
+import peewee
 
 from models.models import User
 from bot.fsm.user_data import UserData
+from bot.keyboards.main_keyboard import get_main_keyboard
 from service.geosuggest import is_object_exists
+from service.profile import get_format_user_profile
 
 router = Router()
 
@@ -15,10 +18,27 @@ router = Router()
 
 @router.message(CommandStart())
 async def start(message: Message, state: FSMContext):
-    await message.answer("Start")
     if not User.select().where(User.id == message.from_user.id).exists():
+        await message.answer(
+            "Привет! Это бот - планировщик путешествий. "
+            "Но прежде чем начать работу немобходимо заполнить анкету",
+        )
         await state.set_state(UserData.name)
         await message.answer("Введите ваше имя")
+
+    else:
+        await message.answer("Вы уже зарегестрированы")
+        await message.answer(
+            get_format_user_profile(id=message.from_user.id),
+            reply_markup=get_main_keyboard(),
+        )
+
+
+@router.message(Command("edit"))
+@router.message(F.text == "Изменить профиль")
+async def edit(message: Message, state: FSMContext):
+    await state.set_state(UserData.name)
+    await message.answer("Введите ваше имя")
 
 
 @router.message(F.text, UserData.name)
@@ -65,7 +85,18 @@ async def process_city(message: Message, state: FSMContext):
 async def process_bio(message: Message, state: FSMContext):
     await state.update_data(bio=message.text)
     user_data = await state.get_data()
-    User.create(id=message.from_user.id, **user_data)
 
-    await message.answer("спасибо")
+    try:
+        User.create(id=message.from_user.id, **user_data)
+
+    except peewee.IntegrityError:
+        User.update(**user_data).where(
+            User.id == message.from_user.id,
+        ).execute()
+
+    await message.answer("Ваш профиль")
+    await message.answer(
+        get_format_user_profile(id=message.from_user.id),
+        reply_markup=get_main_keyboard(),
+    )
     await state.clear()

@@ -8,8 +8,8 @@ class Journey(BaseModel):
     name = peewee.CharField(unique=True)
     about = peewee.TextField(null=True)
     owner = peewee.DeferredForeignKey("User", on_delete="CASCADE")
-    stat_time = peewee.DateField()
-    end_time = peewee.DateField()
+    start_date = peewee.DateField()
+    end_date = peewee.DateField()
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"
@@ -20,7 +20,10 @@ class Journey(BaseModel):
 
 class Location(BaseModel):
     id = peewee.PrimaryKeyField()
-    name = peewee.CharField()
+    country = peewee.CharField()
+    city = peewee.CharField()
+    start_date = peewee.DateField()
+    end_date = peewee.DateField()
     journey = peewee.ForeignKeyField(
         Journey,
     )

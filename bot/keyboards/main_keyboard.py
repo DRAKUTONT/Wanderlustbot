@@ -10,7 +10,7 @@ def get_main_keyboard() -> types.ReplyKeyboardMarkup:
         types.KeyboardButton(text="Мой профиль"),
     )
     builder.row(
-        types.KeyboardButton(text="Создать путешествие"),
+        types.KeyboardButton(text="Путешествия"),
     )
 
     return builder.as_markup(resize_keyboard=True)

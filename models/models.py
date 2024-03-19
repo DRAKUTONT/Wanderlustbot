@@ -26,6 +26,7 @@ class Location(BaseModel):
     end_date = peewee.DateField()
     journey = peewee.ForeignKeyField(
         Journey,
+        on_delete="CASCADE",
     )
 
     class Meta:

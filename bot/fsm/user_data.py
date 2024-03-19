@@ -6,4 +6,5 @@ class UserData(StatesGroup):
     age = State()
     country = State()
     city = State()
+    address = State()
     bio = State()

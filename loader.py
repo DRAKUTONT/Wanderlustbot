@@ -14,6 +14,9 @@ DIR = Path(__file__).absolute().parent
 bot = Bot(token=BOT_TOKEN)
 
 
-database = SqliteDatabase(f"{DIR}/database.sqlite3")
+database = SqliteDatabase(
+    f"{DIR}/database.sqlite3",
+    pragmas={"foreign_keys": 1},
+)
 
 dp = Dispatcher()

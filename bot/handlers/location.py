@@ -12,7 +12,9 @@ from bot.keyboards.journey import (
 )
 from bot.keyboards.location import (
     AllLocationsCallbackFactory,
+    LocationAddressCheckCallbackFactory,
     get_locations_inline_keyboard,
+    get_location_address_check_inline_keyboard,
 )
 from models.models import Location
 from service.geosuggest import is_object_exists
@@ -37,27 +39,57 @@ async def callback_journey_add_location(
 
 @router.message(F.text, NewLocation.country)
 async def process_new_location_country(message: Message, state: FSMContext):
-    if is_object_exists(message.text, types="country"):
-        await state.update_data(country=message.text)
-        await state.set_state(NewLocation.city)
-        await message.answer("Какой город хочешь посетить?")
-    else:
-        await message.answer("Такой страны не существует:( Попробуй еще раз")
+    await state.update_data(country=message.text)
+    await state.set_state(NewLocation.city)
+    await message.answer("Какой город хочешь посетить?")
 
 
 @router.message(F.text, NewLocation.city)
 async def process_city(message: Message, state: FSMContext):
-    if is_object_exists(message.text, types="locality"):
-        await state.update_data(city=message.text)
-        await state.set_state(NewLocation.start_date)
+    await state.update_data(city=message.text)
+    await state.set_state(NewLocation.address)
+    await process_location_address_check(message, state)
+
+
+async def process_location_address_check(message: Message, state: FSMContext):
+    data = await state.get_data()
+    address = is_object_exists(
+        f"{data.get('country')}, {data.get('city')}",
+        types="locality",
+    )
+    if address:
         await message.answer(
+            f"Адрес локации {address[0]['address']['formatted_address']}, верно?",
+            reply_markup=get_location_address_check_inline_keyboard(),
+        )
+    else:
+        await message.answer(
+            "Такого адреса не существует:( Попробуй еще раз",
+        )
+        await state.set_state(NewLocation.country)
+        await message.answer("Какую страну хочешь посетить?")
+
+
+@router.callback_query(
+    LocationAddressCheckCallbackFactory.filter(),
+)
+async def callback_location_address_check(
+    callback: CallbackQuery,
+    callback_data: LocationAddressCheckCallbackFactory,
+    state: FSMContext,
+):
+    if callback_data.is_valid:
+        await state.set_state(NewLocation.start_date)
+        await callback.message.answer(
             "Напиши дату приезда в локацию в формате "
             "YYYY-MM-DD, например 2024-03-18",
         )
     else:
-        await message.answer(
-            "Такого города не существует:( Попробуй еще раз",
-        )
+        await state.set_state(NewLocation.country)
+        await callback.message.answer("Из какой ты страны?")
+
+    await callback.message.delete()
+    await callback.answer()
 
 
 @router.message(F.text, NewLocation.start_date)
@@ -106,6 +138,7 @@ async def callback_journey_show_locations(
     )
     with suppress(TelegramBadRequest):
         await callback.message.edit_text(
+            callback.message.text,
             reply_markup=get_locations_inline_keyboard(locations=locations),
         )
     await callback.answer()

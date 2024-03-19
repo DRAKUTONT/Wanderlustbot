@@ -11,5 +11,6 @@ class NewJourney(StatesGroup):
 class NewLocation(StatesGroup):
     country = State()
     city = State()
+    address = State()
     start_date = State()
     end_date = State()

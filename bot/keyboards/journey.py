@@ -49,7 +49,7 @@ def get_journey_actions_inline_keyboard(
     user_id: int,
     user_type: str = "owner",
 ):
-    """Get action for journey: change, delete, add, etc."""
+    """Get action for journey: change, delete, add_location, etc."""
 
     builder = keyboard.InlineKeyboardBuilder()
     if user_type == "owner":
@@ -79,6 +79,15 @@ def get_journey_actions_inline_keyboard(
         text="Локации",
         callback_data=JourneyActionsCallbackFactory(
             action="locations",
+            journey_id=journey_id,
+            user_type=user_type,
+        ),
+    )
+
+    builder.button(
+        text="Заметки к путешествию",
+        callback_data=JourneyActionsCallbackFactory(
+            action="notes",
             journey_id=journey_id,
             user_type=user_type,
         ),

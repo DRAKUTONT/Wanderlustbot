@@ -85,5 +85,4 @@ def get_locations_inline_keyboard(
             ),
         )
 
-    builder.adjust(3)
     return builder.as_markup()

@@ -1,4 +1,7 @@
+from contextlib import suppress
+
 from aiogram import Router, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
@@ -73,6 +76,7 @@ async def process_new_journey_about(message: Message, state: FSMContext):
     )
     await state.clear()
 
+
 @router.callback_query(
     JourneyActionsCallbackFactory.filter(F.action == "delete"),
 )
@@ -102,7 +106,9 @@ async def my_journeys(message: Message):
 @router.message(F.text == "Путешествия моих друзей")
 @router.message(Command("friends_journeys"))
 async def friends_journeys(message: Message):
-    journeys = User.get(User.id == message.from_user.id).journeys
+    journeys = User.get(User.id == message.from_user.id).journeys.where(
+        Journey.owner != message.from_user.id,
+    )
 
     if journeys:
         await message.answer(
@@ -126,12 +132,13 @@ async def callback_journey_get(
 ):
     journey = Journey.get(Journey.id == callback_data.journey_id)
 
-    await callback.message.answer(
-        get_format_journey(journey.name),
-        reply_markup=get_journey_actions_inline_keyboard(
-            journey_id=journey.id,
-            user_type=callback_data.user_type,
-            user_id=callback.from_user.id,
-        ),
-    )
+    with suppress(TelegramBadRequest):
+        await callback.message.answer(
+            get_format_journey(journey.name),
+            reply_markup=get_journey_actions_inline_keyboard(
+                journey_id=journey.id,
+                user_type=callback_data.user_type,
+                user_id=callback.from_user.id,
+            ),
+        )
     await callback.answer()

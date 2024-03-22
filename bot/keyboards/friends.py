@@ -4,6 +4,7 @@ from aiogram.utils import keyboard
 
 from aiogram.filters.callback_data import CallbackData
 
+from bot.keyboards.journey import AllJourneysCallbackFactory
 from models.models import User
 
 
@@ -50,4 +51,13 @@ def get_friends_inline_keyboard(
                 user_type=user_type,
             ),
         )
+
+    builder.button(
+        text="Назад",
+        callback_data=AllJourneysCallbackFactory(
+            action="get_journey",
+            journey_id=journey_id,
+            user_type=user_type,
+        ),
+    )
     return builder.as_markup()

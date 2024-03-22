@@ -49,3 +49,21 @@ class User(BaseModel):
 
     class Meta:
         table_name = "users"
+
+
+class Note(BaseModel):
+    id = peewee.PrimaryKeyField()
+    title = peewee.CharField()
+    text = peewee.TextField(null=True)
+    file_id = peewee.CharField(250, null=True)
+    is_private = peewee.BooleanField(default=False)
+    journey = peewee.ForeignKeyField(
+        Journey,
+        on_delete="CASCADE",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Note {self.title}>"
+
+    class Meta:
+        table_name = "notes"

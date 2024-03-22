@@ -24,13 +24,14 @@ router = Router()
 @router.callback_query(
     JourneyActionsCallbackFactory.filter(F.action == "friends"),
 )
-async def callback_journey_delete(
+async def callback_get_all_friends(
     callback: CallbackQuery,
     callback_data: JourneyActionsCallbackFactory,
 ):
     friends = Journey.get(
         Journey.id == callback_data.journey_id,
-    ).users
+    ).users.where(User.id != callback.from_user.id)
+
     with suppress(TelegramBadRequest):
         await callback.message.edit_text(
             callback.message.text,

@@ -2,8 +2,8 @@ import asyncio
 import logging
 
 from loader import bot, dp, DIR, database
-from models.models import User, Journey, Location
-from bot.handlers import start, profile, journey, location, friends
+from models.models import User, Journey, Location, Note
+from bot.handlers import start, profile, journey, location, friends, notes
 from bot.errors import errors_handler
 
 
@@ -22,6 +22,7 @@ async def main():
             User.journeys.get_through_model(),
             Journey,
             Location,
+            Note,
         ],
     )
 
@@ -30,6 +31,7 @@ async def main():
     dp.include_router(journey.router)
     dp.include_router(location.router)
     dp.include_router(friends.router)
+    dp.include_router(notes.router)
     dp.include_router(errors_handler.router)
 
     await bot.delete_webhook(drop_pending_updates=True)

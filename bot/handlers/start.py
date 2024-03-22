@@ -53,45 +53,35 @@ async def process_name(message: Message, state: FSMContext):
 @router.message(F.text, UserData.age)
 async def process_age(message: Message, state: FSMContext):
     try:
+        if int(message.text) <= 1 or int(message.text) > 120:
+            raise ValueError
+
         await state.update_data(age=int(message.text))
-        await state.set_state(UserData.country)
-        await message.answer("Из какой ты страны?")
+        await state.set_state(UserData.address)
+        await message.answer(
+            "Напиши свой адрес в удобном для тебя формате, "
+            "например страна, город, улица",
+        )
 
     except ValueError:
         await message.answer("Напиши корректное значение")
 
 
-@router.message(F.text, UserData.country)
-async def process_country(message: Message, state: FSMContext):
-    await state.update_data(country=message.text)
-    await state.set_state(UserData.city)
-    await message.answer("Из какого ты города?")
-
-
-@router.message(F.text, UserData.city)
-async def process_city(message: Message, state: FSMContext):
-    await state.update_data(city=message.text)
-    await state.set_state(UserData.address)
-    await process_address_check(message, state)
-
-
-async def process_address_check(message: Message, state: FSMContext):
-    data = await state.get_data()
-    address = is_object_exists(
-        f"{data.get('country')}, {data.get('city')}",
-        types="locality",
-    )
+@router.message(F.text, UserData.address)
+async def process_address(message: Message, state: FSMContext):
+    address = is_object_exists(message.text)
     if address:
+        address = address[0]["address"]["formatted_address"]
         await message.answer(
-            f"Твой адрес {address[0]['address']['formatted_address']}, верно?",
+            f"Твой адрес {address}, верно?",
             reply_markup=get_address_check_inline_keyboard(),
         )
+
+        await state.update_data(address=address)
     else:
         await message.answer(
             "Такого адреса не существует:( Попробуй еще раз",
         )
-        await state.set_state(UserData.country)
-        await message.answer("Из какой ты страны?")
 
 
 @router.callback_query(
@@ -106,8 +96,10 @@ async def callback_user_address_check(
         await state.set_state(UserData.bio)
         await callback.message.answer("Расскажи немного о себе")
     else:
-        await state.set_state(UserData.country)
-        await callback.message.answer("Из какой ты страны?")
+        await state.set_state(UserData.address)
+        await callback.message.answer(
+            "Напиши свой адрес, в формате страна, город",
+        )
 
     await callback.message.delete()
     await callback.answer()

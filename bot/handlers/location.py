@@ -13,11 +13,14 @@ from bot.keyboards.journey import (
 from bot.keyboards.location import (
     AllLocationsCallbackFactory,
     LocationAddressCheckCallbackFactory,
+    LocationActionCallbackFactory,
+    get_location_actions_inline_keyboard,
     get_locations_inline_keyboard,
     get_location_address_check_inline_keyboard,
 )
 from models.models import Location
 from service.geosuggest import is_object_exists
+from service.location import get_format_location
 
 
 router = Router()
@@ -31,43 +34,29 @@ async def callback_journey_add_location(
     callback_data: JourneyActionsCallbackFactory,
     state: FSMContext,
 ):
-    await callback.message.answer("Какую страну хочешь посетить?")
+    await callback.message.answer("Что хочешь посетить? Напиши адрес места")
     await state.update_data(journey_id=callback_data.journey_id)
-    await state.set_state(NewLocation.country)
+    await state.set_state(NewLocation.address)
     await callback.answer()
 
 
-@router.message(F.text, NewLocation.country)
-async def process_new_location_country(message: Message, state: FSMContext):
-    await state.update_data(country=message.text)
-    await state.set_state(NewLocation.city)
-    await message.answer("Какой город хочешь посетить?")
-
-
-@router.message(F.text, NewLocation.city)
-async def process_city(message: Message, state: FSMContext):
-    await state.update_data(city=message.text)
-    await state.set_state(NewLocation.address)
-    await process_location_address_check(message, state)
-
-
-async def process_location_address_check(message: Message, state: FSMContext):
-    data = await state.get_data()
+@router.message(F.text, NewLocation.address)
+async def process_location_address(message: Message, state: FSMContext):
     address = is_object_exists(
-        f"{data.get('country')}, {data.get('city')}",
-        types="locality",
+        message.text,
     )
     if address:
+        address = address[0]["address"]["formatted_address"]
         await message.answer(
-            f"Адрес локации {address[0]['address']['formatted_address']}, верно?",
+            f"Адрес локации {address}, верно?",
             reply_markup=get_location_address_check_inline_keyboard(),
         )
+
+        await state.update_data(address=address)
     else:
         await message.answer(
             "Такого адреса не существует:( Попробуй еще раз",
         )
-        await state.set_state(NewLocation.country)
-        await message.answer("Какую страну хочешь посетить?")
 
 
 @router.callback_query(
@@ -85,8 +74,10 @@ async def callback_location_address_check(
             "YYYY-MM-DD, например 2024-03-18",
         )
     else:
-        await state.set_state(NewLocation.country)
-        await callback.message.answer("Из какой ты страны?")
+        await state.set_state(NewLocation.address)
+        await callback.message.answer(
+            "Что хочешь посетить? Напиши адрес места",
+        )
 
     await callback.message.delete()
     await callback.answer()
@@ -136,9 +127,45 @@ async def callback_journey_show_locations(
     locations = Location.select().where(
         Location.journey == callback_data.journey_id,
     )
-    with suppress(TelegramBadRequest):
-        await callback.message.edit_text(
-            callback.message.text,
-            reply_markup=get_locations_inline_keyboard(locations=locations),
-        )
+    if not locations:
+        await callback.answer("У этого путешествия еще нет желаемых локаций")
+
+    else:
+        with suppress(TelegramBadRequest):
+            await callback.message.edit_text(
+                callback.message.text,
+                reply_markup=get_locations_inline_keyboard(
+                    locations=locations,
+                    user_type=callback_data.user_type,
+                ),
+            )
+        await callback.answer()
+
+
+@router.callback_query(
+    AllLocationsCallbackFactory.filter(F.action == "get_location"),
+)
+async def callback_location_get(
+    callback: CallbackQuery,
+    callback_data: AllLocationsCallbackFactory,
+):
+    await callback.message.answer(
+        get_format_location(location_id=callback_data.location_id),
+        reply_markup=get_location_actions_inline_keyboard(
+            location_id=callback_data.location_id,
+            user_type=callback_data.user_type,
+        ),
+    )
     await callback.answer()
+
+
+@router.callback_query(
+    LocationActionCallbackFactory.filter(F.action == "delete"),
+)
+async def callback_location_delete(
+    callback: CallbackQuery,
+    callback_data: LocationActionCallbackFactory,
+):
+    Location.get(Location.id == callback_data.location_id).delete_instance()
+    await callback.message.delete()
+    await callback.answer("Локация удалена!")

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters.command import Command
@@ -55,53 +53,25 @@ async def process_new_journey_name(message: Message, state: FSMContext):
 @router.message(F.text, NewJourney.about)
 async def process_new_journey_about(message: Message, state: FSMContext):
     await state.update_data(about=message.text)
-    await state.set_state(NewJourney.start_date)
-    await message.answer(
-        "Напиши дату начала путешествия в формате "
-        "YYYY-MM-DD, например 2024-03-18",
+
+    journey_data = await state.get_data()
+    user = User.get(User.id == message.from_user.id)
+    journey = Journey(
+        owner_id=user,
+        **journey_data,
     )
+    journey.save()
+    user.journeys.add(journey)
 
-
-@router.message(F.text, NewJourney.start_date)
-async def process_new_journey_start_date(message: Message, state: FSMContext):
-    try:
-        await state.update_data(
-            start_date=datetime.strptime(message.text, "%Y-%m-%d"),  # noqa: DTZ007
-        )
-        await state.set_state(NewJourney.end_date)
-        await message.answer(
-            "Напиши дату окончания путешествия в формате "
-            "YYYY-MM-DD, например 2024-03-18",
-        )
-    except ValueError:
-        await message.answer("Неправильный формат даты:(")
-
-
-@router.message(F.text, NewJourney.end_date)
-async def process_new_journey_end_date(message: Message, state: FSMContext):
-    try:
-        await state.update_data(
-            end_date=datetime.strptime(message.text, "%Y-%m-%d"),  # noqa: DTZ007
-        )
-        journey_data = await state.get_data()
-        journey = Journey(
-            owner_id=User.get(User.id == message.from_user.id),
-            **journey_data,
-        )
-        journey.save()
-
-        await message.answer("Путешествие создано!")
-        await message.answer(
-            get_format_journey(journey_data.get("name")),
-            reply_markup=get_journey_actions_inline_keyboard(
-                journey_id=journey.id,
-            ),
-        )
-        await state.clear()
-
-    except ValueError:
-        await message.answer("Неправильный формат даты:(")
-
+    await message.answer("Путешествие создано!")
+    await message.answer(
+        get_format_journey(journey_data.get("name")),
+        reply_markup=get_journey_actions_inline_keyboard(
+            journey_id=journey.id,
+            user_id=message.from_user.id,
+        ),
+    )
+    await state.clear()
 
 @router.callback_query(
     JourneyActionsCallbackFactory.filter(F.action == "delete"),
@@ -113,18 +83,6 @@ async def callback_journey_delete(
     Journey.get(Journey.id == callback_data.journey_id).delete_instance()
     await callback.message.delete()
     await callback.answer("Путешествие удалено!")
-
-
-# @router.callback_query(
-#     JourneyActionsCallbackFactory.filter(F.action == "change"),
-# )
-# async def callback_journey_delete(
-#     callback: CallbackQuery,
-#     callback_data: JourneyActionsCallbackFactory,
-# ):
-#     Journey.get(Journey.id==callback_data.journey_id).delete_instance()
-#     await callback.message.delete()
-#     await callback.answer("Путешествие удалено!")
 
 
 @router.message(F.text == "Мои путешествия")
@@ -141,19 +99,39 @@ async def my_journeys(message: Message):
         await message.answer("У тебя пока что нет путешествий")
 
 
+@router.message(F.text == "Путешествия моих друзей")
+@router.message(Command("friends_journeys"))
+async def friends_journeys(message: Message):
+    journeys = User.get(User.id == message.from_user.id).journeys
+
+    if journeys:
+        await message.answer(
+            "Путешествия в которых ты состоишь",
+            reply_markup=get_journeys_inline_keyboard(
+                journeys=journeys,
+                user_type="friend",
+            ),
+        )
+
+    else:
+        await message.answer("Тебя пока что не добавили ни в одно путешествие")
+
+
 @router.callback_query(
     AllJourneysCallbackFactory.filter(F.action == "get_journey"),
 )
 async def callback_journey_get(
     callback: CallbackQuery,
-    callback_data: JourneyActionsCallbackFactory,
+    callback_data: AllJourneysCallbackFactory,
 ):
-        journey = Journey.get(Journey.id==callback_data.journey_id)
+    journey = Journey.get(Journey.id == callback_data.journey_id)
 
-        await callback.message.answer(
-            get_format_journey(journey.name),
-            reply_markup=get_journey_actions_inline_keyboard(
-                journey_id=journey.id,
-            ),
-        )
-        await callback.answer()
+    await callback.message.answer(
+        get_format_journey(journey.name),
+        reply_markup=get_journey_actions_inline_keyboard(
+            journey_id=journey.id,
+            user_type=callback_data.user_type,
+            user_id=callback.from_user.id,
+        ),
+    )
+    await callback.answer()

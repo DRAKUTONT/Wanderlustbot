@@ -1,0 +1,11 @@
+version: '3.7'
+
+services:
+  bot:
+    build:
+      context: .
+    restart: always
+    environment:
+      BOT_TOKEN: 5109491914:AAGGj3Vm6_Lj16KGD6e-AsocVIp_USuF3jk
+      SUGGEST_API_KEY: abaead6a-78b0-4c42-9ea1-d7ccbcf29ca9
+

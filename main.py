@@ -3,7 +3,8 @@ import logging
 
 from loader import bot, dp, DIR, database
 from models.models import User, Journey, Location
-from bot.handlers import start, profile, journey, location
+from bot.handlers import start, profile, journey, location, friends
+from bot.errors import errors_handler
 
 
 async def main():
@@ -15,13 +16,21 @@ async def main():
             logging.StreamHandler(),
         ],
     )
-    database.create_tables([User, Journey, Location])
+    database.create_tables(
+        [
+            User,
+            User.journeys.get_through_model(),
+            Journey,
+            Location,
+        ],
+    )
 
     dp.include_router(start.router)
     dp.include_router(profile.router)
     dp.include_router(journey.router)
     dp.include_router(location.router)
-
+    dp.include_router(friends.router)
+    dp.include_router(errors_handler.router)
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)

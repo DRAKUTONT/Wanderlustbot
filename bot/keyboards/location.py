@@ -10,6 +10,7 @@ from models.models import Location
 class AllLocationsCallbackFactory(CallbackData, prefix="location"):
     action: str
     location_id: int
+    user_type: str
 
 
 class LocationAddressCheckCallbackFactory(
@@ -19,7 +20,36 @@ class LocationAddressCheckCallbackFactory(
     is_valid: bool
 
 
+class LocationActionCallbackFactory(
+    CallbackData,
+    prefix="location_actions",
+):
+    action: str
+    location_id: int
+
+
+def get_location_actions_inline_keyboard(
+    location_id: int,
+    user_type: str = "owner",
+):
+    """Get location action: delete"""
+
+    builder = keyboard.InlineKeyboardBuilder()
+    if user_type == "owner":
+        builder.button(
+            text="Удалить",
+            callback_data=LocationActionCallbackFactory(
+                action="delete",
+                location_id=location_id,
+            ),
+        )
+
+    return builder.as_markup()
+
+
 def get_location_address_check_inline_keyboard():
+    """Check is correct address"""
+
     builder = keyboard.InlineKeyboardBuilder()
     builder.button(
         text="Да",
@@ -38,14 +68,20 @@ def get_location_address_check_inline_keyboard():
     return builder.as_markup()
 
 
-def get_locations_inline_keyboard(locations: List[Location]):  # noqa: FA100
+def get_locations_inline_keyboard(
+    locations: List[Location],
+    user_type: str = "owner",
+):
+    """Get all locations for journey"""
+
     builder = keyboard.InlineKeyboardBuilder()
     for location in locations:
         builder.button(
-            text=location.city,
+            text=location.address,
             callback_data=AllLocationsCallbackFactory(
                 action="get_location",
                 location_id=location.id,
+                user_type=user_type,
             ),
         )
 

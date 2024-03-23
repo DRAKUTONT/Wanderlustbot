@@ -54,13 +54,6 @@ def get_journey_actions_inline_keyboard(
     builder = keyboard.InlineKeyboardBuilder()
     if user_type == "owner":
         builder.button(
-            text="Изменить путешествие",
-            callback_data=JourneyActionsCallbackFactory(
-                action="change",
-                journey_id=journey_id,
-            ),
-        )
-        builder.button(
             text="Удалить путешествие",
             callback_data=JourneyActionsCallbackFactory(
                 action="delete",

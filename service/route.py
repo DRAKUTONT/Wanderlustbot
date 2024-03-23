@@ -5,7 +5,7 @@ import requests
 from loader import GEOCODER_API_KEY
 
 
-def create_route(places: List[str], profile: str = "car") -> str:
+def create_route(places: List[tuple], profile: str = "car") -> str:
     """Get geohopper url"""
     params = {
         "point": [],
@@ -13,7 +13,7 @@ def create_route(places: List[str], profile: str = "car") -> str:
         "layer": "Omniscale",
     }
     for place in places:
-        coord = get_place_coord(place=str(place))
+        coord = f"{place[0]}%2C{place[1]}"
         params["point"].append(coord)
 
     return (
@@ -40,4 +40,4 @@ def get_place_coord(place: str) -> str:
         0
     ]["GeoObject"]["Point"]["pos"]
 
-    return "%2C".join(coord.split()[::-1])
+    return coord.split()[::-1]

@@ -133,7 +133,7 @@ async def callback_journey_get(
     journey = Journey.get(Journey.id == callback_data.journey_id)
 
     with suppress(TelegramBadRequest):
-        await callback.message.answer(
+        await callback.message.edit_text(
             get_format_journey(journey.name),
             reply_markup=get_journey_actions_inline_keyboard(
                 journey_id=journey.id,

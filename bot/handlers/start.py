@@ -13,6 +13,7 @@ from bot.keyboards.start import (
 )
 from service.geosuggest import is_object_exists
 from service.profile import get_format_user_profile
+from service.route import get_place_coord
 
 
 router = Router()
@@ -77,7 +78,8 @@ async def process_address(message: Message, state: FSMContext):
             reply_markup=get_address_check_inline_keyboard(),
         )
 
-        await state.update_data(address=address)
+        lat, lon = get_place_coord(address)
+        await state.update_data(address=address, lat=lat, lon=lon)
     else:
         await message.answer(
             "Такого адреса не существует:( Попробуй еще раз",

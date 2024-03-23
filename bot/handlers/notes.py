@@ -91,7 +91,7 @@ async def callback_get_note(
 ):
     note = Note.get(Note.id == callback_data.note_id)
     if note.file_id:
-        await callback.message.answer_document(
+        await callback.message.edit_text(
             document=note.file_id,
             caption=note.text,
             reply_markup=get_note_actions_inline_keyboard(

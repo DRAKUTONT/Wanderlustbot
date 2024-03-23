@@ -93,7 +93,8 @@ async def callback_get_friend(
     callback: CallbackQuery,
     callback_data: AllFriendsCallbackFactory,
 ):
-    await callback.message.answer(
-        get_format_user_profile(id=callback_data.friend_id),
-    )
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_text(
+            get_format_user_profile(id=callback_data.friend_id),
+        )
     await callback.answer()

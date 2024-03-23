@@ -8,4 +8,7 @@ services:
     environment:
       BOT_TOKEN: 5109491914:AAGGj3Vm6_Lj16KGD6e-AsocVIp_USuF3jk
       SUGGEST_API_KEY: abaead6a-78b0-4c42-9ea1-d7ccbcf29ca9
+      GEOCODER_API_KEY: b7c38c97-48c9-48bb-a356-5e8e8083a173
+      OPENWEATHER_API_KEY: 004acd7ffa2ec4e836c30a0a4aa0f7e6
+      OPENTRIPMAP_API_KEY: 5ae2e3f221c38a28845f05b6b72db5fa52c332956eb9e8ced444f3c0
 

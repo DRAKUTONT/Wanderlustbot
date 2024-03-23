@@ -12,15 +12,16 @@ def get_format_journey(name: str) -> str:
     )
 
 
-def get_all_journey_locations(journey_id: int, user_id: int) -> List[str]:
+def get_all_journey_locations(journey_id: int, user_id: int) -> List[tuple]:
     locations = [
-        location.address
+        (location.lat, location.lon)
         for location in Location.select().where(Location.journey == journey_id)
     ]
     owner = Journey.get(Journey.id == journey_id).owner
 
-    locations.insert(0, owner.address)
+    locations.insert(0, (owner.lat, owner.lon))
     if owner.id != user_id:
-        locations.insert(0, User.get(User.id == user_id).address)
+        user = User.get(User.id == user_id)
+        locations.insert(0, (user.lat, user.lon))
 
     return locations

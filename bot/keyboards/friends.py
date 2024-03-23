@@ -40,7 +40,6 @@ def get_friends_inline_keyboard(
                 user_type=user_type,
             ),
         )
-    builder.adjust(3)
     if user_type == "owner":
         builder.button(
             text="Добавить друга в путешествие",
@@ -60,4 +59,9 @@ def get_friends_inline_keyboard(
             user_type=user_type,
         ),
     )
+    adjust = filter(
+        lambda x: x != 0,
+        [*[3 for _ in range(len(friends) // 3)], len(friends) % 3, 1, 1],
+    )
+    builder.adjust(*adjust)
     return builder.as_markup()

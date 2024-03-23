@@ -19,6 +19,8 @@ class Journey(BaseModel):
 class Location(BaseModel):
     id = peewee.PrimaryKeyField()
     address = peewee.CharField()
+    lat = peewee.CharField()
+    lon = peewee.CharField()
     start_date = peewee.DateField()
     end_date = peewee.DateField()
     journey = peewee.ForeignKeyField(
@@ -38,6 +40,8 @@ class User(BaseModel):
     name = peewee.CharField()
     age = peewee.IntegerField()
     address = peewee.CharField()
+    lat = peewee.CharField()
+    lon = peewee.CharField()
     bio = peewee.TextField(null=True)
     journeys = peewee.ManyToManyField(
         Journey,

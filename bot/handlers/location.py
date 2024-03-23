@@ -14,13 +14,20 @@ from bot.keyboards.location import (
     AllLocationsCallbackFactory,
     LocationAddressCheckCallbackFactory,
     LocationActionCallbackFactory,
+    LandmarksCallbackFactory,
     get_location_actions_inline_keyboard,
     get_locations_inline_keyboard,
     get_location_address_check_inline_keyboard,
+    get_location_landmarks_inline_leyboard,
+    get_landmark_action_keyboard,
+    get_location_weather_inline_leyboard,
 )
 from models.models import Location
 from service.geosuggest import is_object_exists
+from service.landmarks import get_landmarks, get_format_landmark
 from service.location import get_format_location
+from service.route import get_place_coord
+from service.weather import get_format_weaher
 
 
 router = Router()
@@ -95,7 +102,7 @@ async def process_new_journey_start_date(message: Message, state: FSMContext):
             "YYYY-MM-DD, например 2024-03-18",
         )
     except ValueError:
-        await message.answer("Неправильный формат даты:(")
+        await message.answer("Неправильный формат даты(")
 
 
 @router.message(F.text, NewLocation.end_date)
@@ -105,8 +112,11 @@ async def process_new_journey_end_date(message: Message, state: FSMContext):
             end_date=datetime.strptime(message.text, "%Y-%m-%d"),  # noqa: DTZ007
         )
         location_data = await state.get_data()
+        lat, lon = get_place_coord(location_data.get("address"))
         Location.create(
             journey=location_data.pop("journey_id"),
+            lat=lat,
+            lon=lon,
             **location_data,
         )
 
@@ -114,7 +124,7 @@ async def process_new_journey_end_date(message: Message, state: FSMContext):
         await state.clear()
 
     except ValueError:
-        await message.answer("Неправильный формат даты:(")
+        await message.answer("Неправильный формат даты(")
 
 
 @router.callback_query(
@@ -137,6 +147,7 @@ async def callback_journey_show_locations(
                 reply_markup=get_locations_inline_keyboard(
                     locations=locations,
                     user_type=callback_data.user_type,
+                    journey_id=callback_data.journey_id,
                 ),
             )
         await callback.answer()
@@ -149,13 +160,15 @@ async def callback_location_get(
     callback: CallbackQuery,
     callback_data: AllLocationsCallbackFactory,
 ):
-    await callback.message.answer(
-        get_format_location(location_id=callback_data.location_id),
-        reply_markup=get_location_actions_inline_keyboard(
-            location_id=callback_data.location_id,
-            user_type=callback_data.user_type,
-        ),
-    )
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_text(
+            get_format_location(location_id=callback_data.location_id),
+            reply_markup=get_location_actions_inline_keyboard(
+                location_id=callback_data.location_id,
+                journey_id=callback_data.journey_id,
+                user_type=callback_data.user_type,
+            ),
+        )
     await callback.answer()
 
 
@@ -169,3 +182,70 @@ async def callback_location_delete(
     Location.get(Location.id == callback_data.location_id).delete_instance()
     await callback.message.delete()
     await callback.answer("Локация удалена!")
+
+
+@router.callback_query(
+    LocationActionCallbackFactory.filter(F.action == "weather"),
+)
+async def callback_location_weather(
+    callback: CallbackQuery,
+    callback_data: LocationActionCallbackFactory,
+):
+    location = Location.get(Location.id == callback_data.location_id)
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_text(
+            get_format_weaher(lat=location.lat, lon=location.lon),
+            reply_markup=get_location_weather_inline_leyboard(
+                journey_id=callback_data.journey_id,
+                location_id=callback_data.location_id,
+                user_type=callback_data.user_type,
+            ),
+        )
+    await callback.answer()
+
+
+@router.callback_query(
+    LocationActionCallbackFactory.filter(F.action == "landmarks"),
+)
+async def callback_location_landmarks(
+    callback: CallbackQuery,
+    callback_data: LocationActionCallbackFactory,
+):
+    location = Location.get(Location.id == callback_data.location_id)
+    landmarks = get_landmarks(
+        lat=location.lat,
+        lon=location.lon,
+    )
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_reply_markup(
+            reply_markup=get_location_landmarks_inline_leyboard(
+                landmarks=landmarks,
+                journey_id=callback_data.journey_id,
+                location_id=callback_data.location_id,
+                user_type=callback_data.user_type,
+            ),
+        )
+
+    await callback.answer()
+
+
+@router.callback_query(
+    LandmarksCallbackFactory.filter(F.action == "get_landmark"),
+)
+async def callback_location_get_landmark(
+    callback: CallbackQuery,
+    callback_data: LandmarksCallbackFactory,
+):
+    landmark = get_format_landmark(xid=callback_data.xid)
+
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_text(
+            text=landmark,
+            reply_markup=get_landmark_action_keyboard(
+                journey_id=callback_data.journey_id,
+                location_id=callback_data.location_id,
+                user_type=callback_data.user_type,
+            ),
+        )
+
+    await callback.answer()

@@ -4,6 +4,7 @@ from aiogram.utils import keyboard
 
 from aiogram.filters.callback_data import CallbackData
 
+from bot.keyboards.journey import AllJourneysCallbackFactory
 from models.models import Note
 
 
@@ -39,7 +40,7 @@ def get_notes_inline_keyboard(
                 user_type=user_type,
             ),
         )
-    builder.adjust(3)
+
     if user_type == "owner":
         builder.button(
             text="Добавить заметку",
@@ -50,6 +51,20 @@ def get_notes_inline_keyboard(
                 user_type=user_type,
             ),
         )
+
+    builder.button(
+        text="Назад",
+        callback_data=AllJourneysCallbackFactory(
+            action="get_journey",
+            journey_id=journey_id,
+            user_type=user_type,
+        ),
+    )
+    adjust = filter(
+        lambda x: x != 0,
+        [*[3 for _ in range(len(notes) // 3)], len(notes) % 3, 1, 1],
+    )
+    builder.adjust(*adjust)
     return builder.as_markup()
 
 

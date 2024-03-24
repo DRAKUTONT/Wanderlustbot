@@ -6,7 +6,7 @@ import requests
 from loader import OPENTRIPMAP_API_KEY
 
 
-def get_landmarks(lat, lon, radius: int = 5000, limit: int = 5) -> List[dict]:
+def get_landmarks(lat, lon, radius: int = 10000, limit: int = 5) -> List[dict]:
     params = {
         "lat": lat,
         "lon": lon,

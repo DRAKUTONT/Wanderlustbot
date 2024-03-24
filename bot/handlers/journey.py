@@ -24,7 +24,8 @@ router = Router()
 @router.message(Command("journey"))
 async def journey(message: Message):
     await message.answer(
-        "инфа про путешествия",
+        "Ты можешь создать новое путешествие, "
+        "а также посмотреть запланированные",
         reply_markup=get_journey_keyboard(),
     )
 
@@ -32,7 +33,6 @@ async def journey(message: Message):
 @router.message(F.text == "Новое путешествие")
 @router.message(Command("new_journey"))
 async def new_journey(message: Message, state: FSMContext):
-    await message.answer("новое путешествие")
     await state.set_state(NewJourney.name)
     await message.answer(
         "Как будет называться твое "
@@ -84,9 +84,9 @@ async def callback_journey_delete(
     callback: CallbackQuery,
     callback_data: JourneyActionsCallbackFactory,
 ):
-    Journey.get(Journey.id == callback_data.journey_id).delete_instance()
-    await callback.message.delete()
+    Journey.delete().where(Journey.id == callback_data.journey_id).execute()
     await callback.answer("Путешествие удалено!")
+    await callback.message.delete()
 
 
 @router.message(F.text == "Мои путешествия")

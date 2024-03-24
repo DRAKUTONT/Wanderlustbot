@@ -46,6 +46,7 @@ class User(BaseModel):
     journeys = peewee.ManyToManyField(
         Journey,
         backref="users",
+        on_delete="CASCADE",
     )
 
     def __repr__(self) -> str:

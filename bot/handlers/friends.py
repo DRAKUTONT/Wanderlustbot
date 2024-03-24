@@ -10,9 +10,10 @@ import peewee
 from bot.fsm.friends import AddFriend
 from bot.keyboards.journey import JourneyActionsCallbackFactory
 from bot.keyboards.friends import (
-    get_friends_inline_keyboard,
     FriendsActionsCallbackFactory,
     AllFriendsCallbackFactory,
+    get_friends_inline_keyboard,
+    get_friends_actions_inline_keyboard,
 )
 from models.models import Journey, User
 from service.profile import get_format_user_profile
@@ -71,14 +72,16 @@ async def process_add_friend(message: Message, state: FSMContext):
 
     else:
         try:
+            journey = Journey.get(Journey.id == data.get("journey_id"))
             User.get(User.id == message.text).journeys.add(
-                Journey.get(Journey.id == data.get("journey_id")),
+                journey,
             )
-            await message.answer("Друг добавлен!")
-            await loader.bot.send_message(
-                chat_id=message.text,
-                text="Вас добавили в путешествие!",
-            )
+            for user in journey.users:
+                await loader.bot.send_message(
+                    text=f"В путешествие '{journey.name}' добавлен новый участник!",  # noqa: E501
+                    chat_id=user.id,
+                )
+
 
         except peewee.IntegrityError:
             await message.answer("Друг уже добавлен в ваше путешествие")
@@ -96,5 +99,23 @@ async def callback_get_friend(
     with suppress(TelegramBadRequest):
         await callback.message.edit_text(
             get_format_user_profile(id=callback_data.friend_id),
+            reply_markup=get_friends_actions_inline_keyboard(
+                journey_id=callback_data.journey_id,
+                friend_id=callback_data.friend_id,
+                user_type=callback_data.user_type,
+            ),
         )
     await callback.answer()
+
+
+@router.callback_query(
+    FriendsActionsCallbackFactory.filter(F.action == "delete"),
+)
+async def callback_delete_friend(
+    callback: CallbackQuery,
+    callback_data: FriendsActionsCallbackFactory,
+):
+    journey = Journey.get(Journey.id == callback_data.journey_id)
+    journey.users.remove(User.get(User.id == callback_data.friend_id))
+    await callback.message.delete()
+    await callback.answer("Друг исключен из путешествия")

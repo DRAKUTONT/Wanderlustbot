@@ -91,15 +91,27 @@ async def callback_get_note(
 ):
     note = Note.get(Note.id == callback_data.note_id)
     if note.file_id:
-        await callback.message.edit_text(
-            document=note.file_id,
-            caption=note.text,
-            reply_markup=get_note_actions_inline_keyboard(
-                note_id=callback_data.note_id,
-                journey_id=callback_data.journey_id,
-                user_type=callback_data.user_type,
-            ),
-        )
+        try:
+            await callback.message.answer_document(
+                document=note.file_id,
+                caption=note.text,
+                reply_markup=get_note_actions_inline_keyboard(
+                    note_id=callback_data.note_id,
+                    journey_id=callback_data.journey_id,
+                    user_type=callback_data.user_type,
+                ),
+            )
+
+        except TelegramBadRequest:
+            await callback.message.answer_photo(
+                photo=note.file_id,
+                caption=note.text,
+                reply_markup=get_note_actions_inline_keyboard(
+                    note_id=callback_data.note_id,
+                    journey_id=callback_data.journey_id,
+                    user_type=callback_data.user_type,
+                ),
+            )
 
     elif note.text:
         await callback.message.answer(

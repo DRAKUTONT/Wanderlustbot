@@ -6,7 +6,7 @@ services:
       context: .
     restart: always
     environment:
-      BOT_TOKEN: 5109491914:AAGGj3Vm6_Lj16KGD6e-AsocVIp_USuF3jk
+      BOT_TOKEN: 6831444479:AAEtNl8ZiWsLK362r8K6ad5ZsomX4QUpYqY
       SUGGEST_API_KEY: abaead6a-78b0-4c42-9ea1-d7ccbcf29ca9
       GEOCODER_API_KEY: b7c38c97-48c9-48bb-a356-5e8e8083a173
       OPENWEATHER_API_KEY: 004acd7ffa2ec4e836c30a0a4aa0f7e6

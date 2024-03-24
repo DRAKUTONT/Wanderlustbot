@@ -34,11 +34,11 @@ router = Router()
 
 
 @router.callback_query(
-    JourneyActionsCallbackFactory.filter(F.action == "add_location"),
+    LocationActionCallbackFactory.filter(F.action == "add_location"),
 )
 async def callback_journey_add_location(
     callback: CallbackQuery,
-    callback_data: JourneyActionsCallbackFactory,
+    callback_data: LocationActionCallbackFactory,
     state: FSMContext,
 ):
     await callback.message.answer("Что хочешь посетить? Напиши адрес места")
@@ -93,14 +93,19 @@ async def callback_location_address_check(
 @router.message(F.text, NewLocation.start_date)
 async def process_new_journey_start_date(message: Message, state: FSMContext):
     try:
-        await state.update_data(
-            start_date=datetime.strptime(message.text, "%Y-%m-%d"),  # noqa: DTZ007
-        )
-        await state.set_state(NewLocation.end_date)
-        await message.answer(
-            "Напиши дату отъезда из локации в формате "
-            "YYYY-MM-DD, например 2024-03-18",
-        )
+        if datetime.strptime(message.text, "%Y-%m-%d") < datetime.now():  # noqa: DTZ005, DTZ007
+            await message.answer(
+                "Дата начала путешествия не может быть раньше текущей даты",
+            )
+        else:
+            await state.update_data(
+                start_date=datetime.strptime(message.text, "%Y-%m-%d"),  # noqa: DTZ007
+            )
+            await state.set_state(NewLocation.end_date)
+            await message.answer(
+                "Напиши дату отъезда из локации в формате "
+                "YYYY-MM-DD, например 2024-03-18",
+            )
     except ValueError:
         await message.answer("Неправильный формат даты(")
 
@@ -108,20 +113,25 @@ async def process_new_journey_start_date(message: Message, state: FSMContext):
 @router.message(F.text, NewLocation.end_date)
 async def process_new_journey_end_date(message: Message, state: FSMContext):
     try:
-        await state.update_data(
-            end_date=datetime.strptime(message.text, "%Y-%m-%d"),  # noqa: DTZ007
-        )
-        location_data = await state.get_data()
-        lat, lon = get_place_coord(location_data.get("address"))
-        Location.create(
-            journey=location_data.pop("journey_id"),
-            lat=lat,
-            lon=lon,
-            **location_data,
-        )
+        if datetime.strptime(message.text, "%Y-%m-%d") < datetime.now():  # noqa: DTZ005, DTZ007
+            await message.answer(
+                "Дата окончания путешествия не может быть раньше текущей даты",
+            )
+        else:
+            await state.update_data(
+                end_date=datetime.strptime(message.text, "%Y-%m-%d"),  # noqa: DTZ007
+            )
+            location_data = await state.get_data()
+            lat, lon = get_place_coord(location_data.get("address"))
+            Location.create(
+                journey=location_data.pop("journey_id"),
+                lat=lat,
+                lon=lon,
+                **location_data,
+            )
 
-        await message.answer("Локация добавлена!")
-        await state.clear()
+            await message.answer("Локация добавлена!")
+            await state.clear()
 
     except ValueError:
         await message.answer("Неправильный формат даты(")

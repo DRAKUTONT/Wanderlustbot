@@ -1,6 +1,7 @@
 from contextlib import suppress
 
 from aiogram import Router, F
+from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters.command import Command
@@ -10,24 +11,14 @@ from bot.fsm.journey import NewJourney
 from bot.keyboards.journey import (
     JourneyActionsCallbackFactory,
     AllJourneysCallbackFactory,
-    get_journey_keyboard,
     get_journey_actions_inline_keyboard,
     get_journeys_inline_keyboard,
+    get_journey_routes_keyboard,
 )
 from models.models import Journey, User
 from service.journey import get_format_journey
 
 router = Router()
-
-
-@router.message(F.text == "Путешествия")
-@router.message(Command("journey"))
-async def journey(message: Message):
-    await message.answer(
-        "Ты можешь создать новое путешествие, "
-        "а также посмотреть запланированные",
-        reply_markup=get_journey_keyboard(),
-    )
 
 
 @router.message(F.text == "Новое путешествие")
@@ -71,22 +62,10 @@ async def process_new_journey_about(message: Message, state: FSMContext):
         get_format_journey(journey_data.get("name")),
         reply_markup=get_journey_actions_inline_keyboard(
             journey_id=journey.id,
-            user_id=message.from_user.id,
         ),
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
     await state.clear()
-
-
-@router.callback_query(
-    JourneyActionsCallbackFactory.filter(F.action == "delete"),
-)
-async def callback_journey_delete(
-    callback: CallbackQuery,
-    callback_data: JourneyActionsCallbackFactory,
-):
-    Journey.delete().where(Journey.id == callback_data.journey_id).execute()
-    await callback.answer("Путешествие удалено!")
-    await callback.message.delete()
 
 
 @router.message(F.text == "Мои путешествия")
@@ -138,7 +117,36 @@ async def callback_journey_get(
             reply_markup=get_journey_actions_inline_keyboard(
                 journey_id=journey.id,
                 user_type=callback_data.user_type,
-                user_id=callback.from_user.id,
             ),
+            parse_mode=ParseMode.MARKDOWN_V2,
         )
     await callback.answer()
+
+
+@router.callback_query(
+    JourneyActionsCallbackFactory.filter(F.action == "delete"),
+)
+async def callback_journey_delete(
+    callback: CallbackQuery,
+    callback_data: JourneyActionsCallbackFactory,
+):
+    Journey.delete().where(Journey.id == callback_data.journey_id).execute()
+    await callback.answer("Путешествие удалено!")
+    await callback.message.delete()
+
+
+@router.callback_query(
+    JourneyActionsCallbackFactory.filter(F.action == "routes"),
+)
+async def callback_journey_routes(
+    callback: CallbackQuery,
+    callback_data: JourneyActionsCallbackFactory,
+):
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_reply_markup(
+            reply_markup=get_journey_routes_keyboard(
+                journey_id=callback_data.journey_id,
+                user_id=callback.from_user.id,
+                user_type=callback_data.user_type,
+            ),
+        )

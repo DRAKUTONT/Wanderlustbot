@@ -45,7 +45,7 @@ def get_friends_inline_keyboard(
         )
     if user_type == "owner":
         builder.button(
-            text="Добавить друга в путешествие",
+            text="➕ Добавить друга в путешествие",
             callback_data=FriendsActionsCallbackFactory(
                 action="add_friend",
                 journey_id=journey_id,
@@ -55,7 +55,7 @@ def get_friends_inline_keyboard(
         )
 
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=AllJourneysCallbackFactory(
             action="get_journey",
             journey_id=journey_id,
@@ -79,7 +79,7 @@ def get_friends_actions_inline_keyboard(
 
     if user_type == "owner":
         builder.button(
-            text="Удалить",
+            text="🗑 Удалить",
             callback_data=FriendsActionsCallbackFactory(
                 action="delete",
                 journey_id=journey_id,
@@ -89,7 +89,7 @@ def get_friends_actions_inline_keyboard(
         )
 
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=JourneyActionsCallbackFactory(
             action="friends",
             journey_id=journey_id,

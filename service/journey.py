@@ -8,7 +8,7 @@ def get_format_journey(name: str) -> str:
 
     return (
         f"ID путешествия: {journey.id}\nНазвание: {journey.name}\n"
-        f"Описание:\n{journey.about}"
+        f"Описание: {journey.about}"
     )
 
 

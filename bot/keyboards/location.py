@@ -53,7 +53,7 @@ def get_location_actions_inline_keyboard(
     builder = keyboard.InlineKeyboardBuilder()
 
     builder.button(
-        text="Достопримечательности",
+        text="🗽 Достопримечательности",
         callback_data=LocationActionCallbackFactory(
             action="landmarks",
             location_id=location_id,
@@ -63,7 +63,7 @@ def get_location_actions_inline_keyboard(
     )
 
     builder.button(
-        text="Погода",
+        text="🌥 Погода",
         callback_data=LocationActionCallbackFactory(
             action="weather",
             location_id=location_id,
@@ -74,7 +74,7 @@ def get_location_actions_inline_keyboard(
 
     if user_type == "owner":
         builder.button(
-            text="Удалить",
+            text="🗑 Удалить",
             callback_data=LocationActionCallbackFactory(
                 action="delete",
                 location_id=location_id,
@@ -84,7 +84,7 @@ def get_location_actions_inline_keyboard(
         )
 
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=JourneyActionsCallbackFactory(
             action="locations",
             journey_id=journey_id,
@@ -136,8 +136,19 @@ def get_locations_inline_keyboard(
             ),
         )
 
+    if user_type == "owner":
+        builder.button(
+            text="➕ Добавить локацию",
+            callback_data=LocationActionCallbackFactory(
+                action="add_location",
+                journey_id=journey_id,
+                location_id=0,
+                user_type=user_type,
+            ),
+        )
+
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=AllJourneysCallbackFactory(
             action="get_journey",
             journey_id=journey_id,
@@ -162,7 +173,7 @@ def get_location_weather_inline_leyboard(
     builder = keyboard.InlineKeyboardBuilder()
 
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=AllLocationsCallbackFactory(
             action="get_location",
             location_id=location_id,
@@ -173,7 +184,6 @@ def get_location_weather_inline_leyboard(
 
     builder.adjust(1)
     return builder.as_markup()
-
 
 
 def get_location_landmarks_inline_leyboard(
@@ -197,7 +207,7 @@ def get_location_landmarks_inline_leyboard(
         )
 
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=AllLocationsCallbackFactory(
             action="get_location",
             location_id=location_id,
@@ -222,7 +232,7 @@ def get_landmark_action_keyboard(
     builder = keyboard.InlineKeyboardBuilder()
 
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=LocationActionCallbackFactory(
             action="landmarks",
             location_id=location_id,

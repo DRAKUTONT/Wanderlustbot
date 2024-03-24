@@ -46,30 +46,14 @@ def get_journeys_inline_keyboard(
 
 def get_journey_actions_inline_keyboard(
     journey_id: int,
-    user_id: int,
     user_type: str = "owner",
 ):
     """Get action for journey: change, delete, add_location, etc."""
 
     builder = keyboard.InlineKeyboardBuilder()
-    if user_type == "owner":
-        builder.button(
-            text="Удалить путешествие",
-            callback_data=JourneyActionsCallbackFactory(
-                action="delete",
-                journey_id=journey_id,
-            ),
-        )
-        builder.button(
-            text="Добавить локацию",
-            callback_data=JourneyActionsCallbackFactory(
-                action="add_location",
-                journey_id=journey_id,
-            ),
-        )
 
     builder.button(
-        text="Локации",
+        text="🏔 Локации",
         callback_data=JourneyActionsCallbackFactory(
             action="locations",
             journey_id=journey_id,
@@ -78,7 +62,7 @@ def get_journey_actions_inline_keyboard(
     )
 
     builder.button(
-        text="Заметки к путешествию",
+        text="📝 Заметки к путешествию",
         callback_data=JourneyActionsCallbackFactory(
             action="notes",
             journey_id=journey_id,
@@ -87,7 +71,7 @@ def get_journey_actions_inline_keyboard(
     )
 
     builder.button(
-        text="Участники",
+        text="👤 Участники",
         callback_data=JourneyActionsCallbackFactory(
             action="friends",
             journey_id=journey_id,
@@ -96,7 +80,49 @@ def get_journey_actions_inline_keyboard(
     )
 
     builder.button(
-        text="Построить маршрут путешествия",
+        text="🛤 Маршруты",
+        callback_data=JourneyActionsCallbackFactory(
+            action="routes",
+            journey_id=journey_id,
+            user_type=user_type,
+        ),
+    )
+
+    if user_type == "owner":
+        builder.button(
+            text="🗑 Удалить путешествие",
+            callback_data=JourneyActionsCallbackFactory(
+                action="delete",
+                journey_id=journey_id,
+            ),
+        )
+
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def get_journey_routes_keyboard(
+    journey_id: int,
+    user_id: int,
+    user_type: str = "owner",
+):
+    builder = keyboard.InlineKeyboardBuilder()
+
+    builder.button(
+        text="🏃‍♂️ Пеший маршрут",
+        web_app=WebAppInfo(
+            url=create_route(
+                get_all_journey_locations(
+                    journey_id=journey_id,
+                    user_id=user_id,
+                ),
+                profile="hike",
+            ),
+        ),
+    )
+
+    builder.button(
+        text="🚗 На машине",
         web_app=WebAppInfo(
             url=create_route(
                 get_all_journey_locations(
@@ -108,22 +134,14 @@ def get_journey_actions_inline_keyboard(
         ),
     )
 
-    builder.adjust(2, 1)
+    builder.button(
+        text="🔙 Назад",
+        callback_data=AllJourneysCallbackFactory(
+            action="get_journey",
+            journey_id=journey_id,
+            user_type=user_type,
+        ),
+    )
+
+    builder.adjust(1)
     return builder.as_markup()
-
-
-def get_journey_keyboard() -> types.ReplyKeyboardMarkup:
-    """Main keyboard for journeys"""
-
-    builder = keyboard.ReplyKeyboardBuilder()
-
-    builder.row(
-        types.KeyboardButton(text="Путешествия моих друзей"),
-        types.KeyboardButton(text="Мои путешествия"),
-    )
-
-    builder.row(
-        types.KeyboardButton(text="Новое путешествие"),
-    )
-
-    return builder.as_markup(resize_keyboard=True)

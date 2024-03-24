@@ -35,7 +35,7 @@ def get_place_coord(place: str) -> str:
         timeout=5,
     )
 
-    logging.warning(f"Geocoder status code: {request.status_code}")  # noqa: G004
+    logging.warning(f"Geocoder status code: {request.status_code}")
     coord = request.json()["response"]["GeoObjectCollection"]["featureMember"][
         0
     ]["GeoObject"]["Point"]["pos"]

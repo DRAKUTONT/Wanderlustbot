@@ -34,8 +34,7 @@ async def callback_get_all_friends(
     ).users.where(User.id != callback.from_user.id)
 
     with suppress(TelegramBadRequest):
-        await callback.message.edit_text(
-            callback.message.text,
+        await callback.message.edit_reply_markup(
             reply_markup=get_friends_inline_keyboard(
                 friends=friends,
                 journey_id=callback_data.journey_id,

@@ -43,7 +43,7 @@ def get_notes_inline_keyboard(
 
     if user_type == "owner":
         builder.button(
-            text="Добавить заметку",
+            text="➕ Добавить заметку",
             callback_data=NotesActionsCallbackFactory(
                 action="add_note",
                 journey_id=journey_id,
@@ -53,7 +53,7 @@ def get_notes_inline_keyboard(
         )
 
     builder.button(
-        text="Назад",
+        text="🔙 Назад",
         callback_data=AllJourneysCallbackFactory(
             action="get_journey",
             journey_id=journey_id,
@@ -80,7 +80,7 @@ def get_note_actions_inline_keyboard(
     if user_type == "owner":
         if not Note.get(Note.id == note_id).is_private:
             builder.button(
-                text="Скрыть заметку",
+                text="🔒 Скрыть заметку",
                 callback_data=NotesActionsCallbackFactory(
                     action="hide_note",
                     journey_id=journey_id,
@@ -90,7 +90,7 @@ def get_note_actions_inline_keyboard(
             )
         else:
             builder.button(
-                text="Сделать заметку открытой",
+                text="🔓 Сделать заметку открытой",
                 callback_data=NotesActionsCallbackFactory(
                     action="show_note",
                     journey_id=journey_id,
@@ -100,7 +100,7 @@ def get_note_actions_inline_keyboard(
             )
 
         builder.button(
-            text="Удалить",
+            text="🗑 Удалить",
             callback_data=NotesActionsCallbackFactory(
                 action="delete",
                 journey_id=journey_id,

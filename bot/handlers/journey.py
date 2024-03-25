@@ -1,7 +1,6 @@
 from contextlib import suppress
 
 from aiogram import Router, F
-from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters.command import Command
@@ -63,7 +62,6 @@ async def process_new_journey_about(message: Message, state: FSMContext):
         reply_markup=get_journey_actions_inline_keyboard(
             journey_id=journey.id,
         ),
-        parse_mode=ParseMode.MARKDOWN_V2,
     )
     await state.clear()
 
@@ -118,7 +116,6 @@ async def callback_journey_get(
                 journey_id=journey.id,
                 user_type=callback_data.user_type,
             ),
-            parse_mode=ParseMode.MARKDOWN_V2,
         )
     await callback.answer()
 

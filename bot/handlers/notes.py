@@ -14,6 +14,7 @@ from bot.keyboards.notes import (
     get_note_actions_inline_keyboard,
 )
 from models.models import Note
+from service.journey import get_format_journey
 
 router = Router()
 
@@ -76,9 +77,19 @@ async def process_add_note(message: Message, state: FSMContext):
         await state.update_data(file_id=message.document.file_id)
 
     data = await state.get_data()
-    Note.create(**data)
+    note = Note.create(**data)
 
     await message.answer("Заметка добавлена!")
+    notes = Note.select().where(Note.journey == note.journey)
+
+    await message.answer(
+        get_format_journey(name=note.journey.name),
+        reply_markup=get_notes_inline_keyboard(
+            notes=notes,
+            journey_id=note.journey.id,
+            user_type="owner",
+        ),
+    )
     await state.clear()
 
 

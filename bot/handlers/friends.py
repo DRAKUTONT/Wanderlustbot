@@ -16,6 +16,7 @@ from bot.keyboards.friends import (
     get_friends_actions_inline_keyboard,
 )
 from models.models import Journey, User
+from service.journey import get_format_journey
 from service.profile import get_format_user_profile
 import loader
 
@@ -81,6 +82,18 @@ async def process_add_friend(message: Message, state: FSMContext):
                     chat_id=user.id,
                 )
 
+            friends = Journey.get(
+                Journey.id == journey.id,
+            ).users.where(User.id != message.from_user.id)
+
+            await message.answer(
+                text=get_format_journey(name=journey.name),
+                reply_markup=get_friends_inline_keyboard(
+                    friends=friends,
+                    journey_id=journey.id,
+                    user_type="owner",
+                ),
+            )
 
         except peewee.IntegrityError:
             await message.answer("Друг уже добавлен в ваше путешествие")

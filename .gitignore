@@ -161,5 +161,4 @@ cython_debug/
 logs.log
 *.sqlite3
 *.html
-*.png
 tilescache

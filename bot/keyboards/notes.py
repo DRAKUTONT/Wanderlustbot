@@ -31,8 +31,9 @@ def get_notes_inline_keyboard(
 
     builder = keyboard.InlineKeyboardBuilder()
     for note in notes:
+        text = f"🔒 {note.text}" if note.is_private else f"🔓 {note.text}"
         builder.button(
-            text=note.title,
+            text=text,
             callback_data=AllNotesCallbackFactory(
                 action="get_note",
                 journey_id=journey_id,

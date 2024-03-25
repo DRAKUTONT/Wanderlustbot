@@ -1,5 +1,4 @@
 from aiogram import Router, F
-from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters.command import CommandStart, Command
 from aiogram.fsm.context import FSMContext
@@ -32,7 +31,7 @@ async def start(message: Message, state: FSMContext):
 
     else:
         await message.answer(
-            "Ты уже зарегестрирован.",
+            "Ты уже зарегестрирован",
             reply_markup=get_main_keyboard(),
         )
 
@@ -124,6 +123,5 @@ async def process_bio(message: Message, state: FSMContext):
     await message.answer(
         get_format_user_profile(id=message.from_user.id),
         reply_markup=get_main_keyboard(),
-        parse_mode=ParseMode.MARKDOWN_V2,
     )
     await state.clear()

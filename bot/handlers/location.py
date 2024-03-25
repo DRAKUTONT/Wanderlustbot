@@ -123,14 +123,23 @@ async def process_new_journey_end_date(message: Message, state: FSMContext):
             )
             location_data = await state.get_data()
             lat, lon = get_place_coord(location_data.get("address"))
-            Location.create(
+            location = Location.create(
                 journey=location_data.pop("journey_id"),
                 lat=lat,
                 lon=lon,
                 **location_data,
             )
+            location.save()
 
             await message.answer("Локация добавлена!")
+            await message.answer(
+                get_format_location(location_id=location.id),
+                reply_markup=get_location_actions_inline_keyboard(
+                    location_id=location.id,
+                    journey_id=location.journey.id,
+                    user_type="owner",
+                ),
+            )
             await state.clear()
 
     except ValueError:
@@ -147,19 +156,16 @@ async def callback_journey_show_locations(
     locations = Location.select().where(
         Location.journey == callback_data.journey_id,
     )
-    if not locations:
-        await callback.answer("У этого путешествия еще нет желаемых локаций")
 
-    else:
-        with suppress(TelegramBadRequest):
-            await callback.message.edit_text(
-                callback.message.text,
-                reply_markup=get_locations_inline_keyboard(
-                    locations=locations,
-                    user_type=callback_data.user_type,
-                    journey_id=callback_data.journey_id,
-                ),
-            )
+    with suppress(TelegramBadRequest):
+        await callback.message.edit_text(
+            callback.message.text,
+            reply_markup=get_locations_inline_keyboard(
+                locations=locations,
+                user_type=callback_data.user_type,
+                journey_id=callback_data.journey_id,
+            ),
+        )
         await callback.answer()
 
 
